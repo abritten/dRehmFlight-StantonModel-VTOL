@@ -3,7 +3,7 @@
 //Editor: Drew Britten
 //Project: Stanton VTOL build
 //Project Start: 01/01/2023
-//Last Updated: 08/20/2023
+//Last Updated: 08/22/2023
 //Version: Beta 1.3
 
 //========================================================================================================================//
@@ -42,7 +42,7 @@
 
 #define USE_SBUS_RX
 //****************************************
-//****************DREW********************
+//****************VTOL MOD****************
 //****************************************
 //#define USE_DSM_RX
 static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to match the number of transmitter channels you have
@@ -51,7 +51,7 @@ static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to mat
 
 #define USE_MPU6050_I2C //Default
 //****************************************
-//****************DREW********************
+//***********VTOL MOD ABOVE***************
 //****************************************
 //#define USE_MPU9250_SPI
 
@@ -170,7 +170,7 @@ unsigned long channel_4_fs = 1500; //rudd //yaw //correct
 unsigned long channel_5_fs = 1000; //gear// failsafe // correct , greater than 1500 = throttle cut
 unsigned long channel_6_fs = 1000; //aux1 // mode // correct
 //****************************************
-//****************DREW********************
+//***********VTOL MOD ABOVE***************
 //****************************************
 
 //Filter parameters - Defaults tuned for 2kHz loop rate; Do not touch unless you know what you are doing:
@@ -200,7 +200,7 @@ float GyroErrorZ = 1.00;
 
 
 //****************************************
-//****************DREW********************
+//***********VTOL MOD ABOVE***************
 //****************************************
 
 //Controller parameters (take note of defaults before modifying!):
@@ -397,7 +397,7 @@ void setup() {
   //calculate_IMU_error(); //Calibration parameters printed to serial monitor. Paste these in the user specified variables section, then comment this out forever.
   //Go to Line 185
   //****************************************
-  //****************DREW********************
+  //***********VTOL MOD ABOVE***************
   //****************************************
 
   /*
@@ -425,13 +425,13 @@ void setup() {
   //delay(50000000);
   delay(5);
   //****************************************
-  //****************DREW********************
+  //***********VTOL MOD ABOVE***************
   //****************************************
 
   //calibrateESCs(); //UNPLUG SERVOS!! PROPS OFF. Uncomment this to calibrate your ESCs by setting throttle stick to max, powering on, and lowering throttle to zero after the beeps
   //Code will not proceed past here if this function is uncommented!
   //****************************************
-  //****************DREW********************
+  //***********VTOL MOD ABOVE***************
   //****************************************
   //Arm OneShot125 motors
   throttleTop = 250; //Full acro
@@ -481,7 +481,7 @@ void loop() {
   //printLoopRate();      //Prints the time between loops in microseconds (expected: microseconds between loop iterations)
 
   //****************************************
-  //****************DREW********************
+  //***********VTOL MOD ABOVE***************
   //****************************************
 
   armedStatus(); //only arm the drone when throttle cut is off and throttle is low.
@@ -507,7 +507,9 @@ void loop() {
   loopRate(2000); //Regulate loop rate //Do not exceed 2000Hz, all filter parameters tuned to 2000Hz by default
 }
 
-
+//****************************************
+//***********VTOL MOD ABOVE***************
+//****************************************
 
 //========================================================================================================================//
 //                                                      FUNCTIONS                                                         //
@@ -518,6 +520,10 @@ void armedStatus() {
     armedFly = true;
   }
 }
+
+//****************************************
+//***********VTOL MOD ABOVE***************
+//****************************************
 
 void controlMixer() {
   //DESCRIPTION: Mixes scaled commands from PID controller to actuator outputs based on vehicle configuration
@@ -581,7 +587,7 @@ void controlMixer() {
   }
 
   //****************************************
-  //*************DREW MIXER*****************
+  //***********VTOL MOD MIXER***************
   //****************************************
 
   /*
@@ -601,7 +607,7 @@ void controlMixer() {
     s6_command_scaled = 0;
     s7_command_scaled = 0;
     ///****************************************
-    ///****************DREW********************
+    ///***********VTOL MOD ABOVE***************
     ///****************************************
   */
   /*
@@ -675,8 +681,11 @@ void controlAlt() {
   //Serial.println(tf_alt_filtered);
 
   //Serial.println(alt_PID);
-
 }
+
+//****************************************
+//***********VTOL MOD ABOVE***************
+//****************************************
 
 void IMUinit() {
   //DESCRIPTION: Initialize IMU
@@ -1339,7 +1348,7 @@ void scaleCommands() {
   s6_command_PWM = constrain(s6_command_PWM, 0, 180);
   s7_command_PWM = constrain(s7_command_PWM, 0, 180);
   //****************************************
-  //****************DREW********************
+  //***********VTOL MOD ABOVE***************
   //****************************************
 }
 
@@ -1367,7 +1376,7 @@ void getCommands() {
     float scale = 0.615;
     float bias  = 800.0;
 
-
+    // RadioLink AT10 Stick mode 1
     channel_1_pwm = sbusChannels[1] * scale + bias; //throttle
     channel_2_pwm = sbusChannels[0] * scale + bias; //roll//yaw
     channel_3_pwm = sbusChannels[2] * scale + bias; //pitch
@@ -1375,7 +1384,7 @@ void getCommands() {
     channel_5_pwm = sbusChannels[4] * scale + bias; //failsafe - gear
     channel_6_pwm = sbusChannels[5] * scale + bias; //mode - aux1
     //****************************************
-    //****************DREW********************
+    //***********VTOL MOD ABOVE***************
     //****************************************
   }
 
@@ -1655,7 +1664,7 @@ void throttleCut() {
     m6_command_PWM = 120;
 
     //****************************************
-    //****************DREW********************
+    //***********VTOL MOD ABOVE***************
     //****************************************
 
     //Uncomment if using servo PWM variables to control motor ESCs

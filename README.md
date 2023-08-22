@@ -1,13 +1,19 @@
 # dRehmFlight-StantonModel-VTOL
 
-Full disclosure: This is a [Stanton RC VTOL model](https://youtu.be/XPXN0QejqM0) with [DrehmFlight FC](https://github.com/nickrehm/dRehmFlight). Modified and optimized by [abritten](https://github.com/abritten) (Drew Britten).
+**Project summary:** 
 
-[VTOL Fight Demo](https://youtu.be/psxmBfpBxX4)
+- This is a replica of the [Stanton RC VTOL model](https://youtu.be/XPXN0QejqM0) using the [DrehmFlight FC](https://github.com/nickrehm/dRehmFlight). Replicated, modified and optimized by [abritten](https://github.com/abritten) (Drew Britten).
 
-[Datasheet](Resources/Specs/Datasheet.pdf)
+- [VTOL Flight Demo](https://youtu.be/psxmBfpBxX4)
+
+- [Datasheet](Resources/Specs/Datasheet.pdf)
 
 ![](Resources/CAD.png)
 ![](Resources/field.jpg)
+
+End of summary
+
+---
 
 ---
 
