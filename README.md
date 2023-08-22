@@ -1,19 +1,15 @@
-# dRehmFlight-StantonModel-VTOL
+![dRehmFlight Logo](https://github.com/nickrehm/dRehmFlight/blob/master/dRehmFlight%20Logo.png)
 
-**Project summary:** 
+## Project : dRehmFlight-StantonModel-VTOL
+ This is a replica of the [Stanton RC VTOL model](https://youtu.be/XPXN0QejqM0) using the [DrehmFlight FC](https://github.com/nickrehm/dRehmFlight). Replicated and modified by [abritten](https://github.com/abritten) (Drew Britten).
 
-- This is a replica of the [Stanton RC VTOL model](https://youtu.be/XPXN0QejqM0) using the [DrehmFlight FC](https://github.com/nickrehm/dRehmFlight). Replicated, modified and optimized by [abritten](https://github.com/abritten) (Drew Britten).
+- [x] [VTOL Flight Demo](https://youtu.be/psxmBfpBxX4)
+- [x] [VTOL Datasheet](Resources/Specs/Datasheet.pdf)
 
-- [VTOL Flight Demo](https://youtu.be/psxmBfpBxX4)
-
-- [Datasheet](Resources/Specs/Datasheet.pdf)
-
-![](Resources/CAD.png)
-![](Resources/field.jpg)
-
-End of summary
-
----
+![](Resources/Images/CADsmall.png)
+![](Resources/Images/fieldsmall.png)
+<!--![](Resources/Images/CAD.png) 
+![](Resources/Images/field.jpg) -->
 
 ---
 
