@@ -3,7 +3,7 @@
 //Editor: Drew Britten
 //Project: Stanton VTOL build
 //Project Start: 01/01/2023
-//Last Updated: 08/22/2023
+//Last Updated: 09/03/2023
 //Version: Beta 1.3
 
 //========================================================================================================================//
@@ -412,9 +412,9 @@ void setup() {
 
 
   //Arm servo channels
-  servo1.write(90); //Command servo angle from 0-180 degrees (1000 to 2000 PWM)
+  servo1.write(15); //Command servo angle from 0-180 degrees (1000 to 2000 PWM)
   //V2PORT: 0 backL, 90 up, 150 fwdL
-  servo2.write(90); //Set these to 90 for servos if you do not want them to briefly max out on startup
+  servo2.write(165); //Set these to 90 for servos if you do not want them to briefly max out on startup
   //V2STBD: 180 backL, 90 up, 30 fwdL
   //V1STBD: 180 backL, 165 up, 90 fwd, 50 down
   servo3.write(90); //Keep these at 0 if you are using servo outputs for motors
@@ -550,8 +550,7 @@ void controlMixer() {
       s3_command_scaled = 0.37 + 3*pitch_PID;
   */
 
-  ////*************DRONE HOVER LIDAR MODE*****************
-  if (channel_6_pwm > 1900) {
+  if (channel_6_pwm > 1900) { // GROUND MODE
     m1_command_scaled = thro_des + roll_PID + alt_PID;
     m2_command_scaled = thro_des - roll_PID + alt_PID;
     m3_command_scaled = 0;
@@ -567,8 +566,8 @@ void controlMixer() {
     s6_command_scaled = 0;
     s7_command_scaled = 0;
   }
-  ////*************DRONE MODE*****************
-  else {
+
+  else if ((channel_6_pwm < 1900) && (channel_6_pwm > 1100)) { // DRONE MODE
     //throttle and roll
     m1_command_scaled = thro_des + roll_PID;
     m2_command_scaled = thro_des - roll_PID;
@@ -586,9 +585,44 @@ void controlMixer() {
     s7_command_scaled = 0;
   }
 
+  else { // PLANE MODE
+    //throttle and yaw
+    m1_command_scaled = thro_des - 0.2 * yaw_PID;
+    m2_command_scaled = thro_des + 0.2 * yaw_PID;
+    m3_command_scaled = 0;
+    m4_command_scaled = 0;
+    m5_command_scaled = 0;
+    m6_command_scaled = 0;
+    //pitch and roll
+    s1_command_scaled = 0.5 - roll_PID + pitch_PID;
+    s2_command_scaled = 0.5 - roll_PID - pitch_PID;
+    s3_command_scaled = 0.5 + pitch_PID;
+    s4_command_scaled = 0;
+    s5_command_scaled = 0;
+    s6_command_scaled = 0;
+    s7_command_scaled = 0;
+  }
+
   //****************************************
   //***********VTOL MOD MIXER***************
   //****************************************
+  /*
+    Lidar Drone Plane
+    Global mode = GROUND, DRONE, PLANE
+    CH6 : 3 mode switch for global mode.
+    ARMES Status = thrCut off, thr low, Ground mode
+    Fader function : when global switches from drone to plane, follow a scripted transition.
+                  where servos tilt and lock forward in a time interval.
+                  elevator takes full effect with pitch axis instantly.
+                  roll swithces from thrust diff to servo diff once rotor tilt lock is complete.
+                  yaw switches from servo diff to thrust diff once rotor tilt lock is complete.
+                  Throttle maintains 50% during fader transition.
+                  From plane to drone, the order is reversed with 50% throttle but with twice as fast or more, tilt rotor lock speed.
+                  Elevator is determined off of aerodynamic behavior if needed but will center during plane to drone transition.
+                  Fader transition can be canceled and reversed.
+    Fader is only initialized when drone mode is selected afer startup.
+  */
+
 
   /*
     //TOM STANTON MIXER EDIT
@@ -1338,10 +1372,14 @@ void scaleCommands() {
   //Constrain commands to servos within servo library bounds
 
   //LIMITS
-  //V2PORT: 0 backL, 90 up, 150 fwdL
-  //V2STBD: 180 backL, 90 up, 30 fwdL
-  s1_command_PWM = constrain(s1_command_PWM, 0, 150);
-  s2_command_PWM = constrain(s2_command_PWM, 30, 180);
+  //DRONE
+  //PORT: 0 backL, 90 up, 150 fwdL
+  //STBD: 180 backL, 90 up, 30 fwdL
+  //PLANE
+  //PORT: 0 back, 15 up, 90 fwd, 120 down.
+  //STBD: 180 back, 165 up, 90 fwd, 60 down
+  s1_command_PWM = constrain(s1_command_PWM, 0, 120);
+  s2_command_PWM = constrain(s2_command_PWM, 60, 180);
   s3_command_PWM = constrain(s3_command_PWM, 0, 180);
   s4_command_PWM = constrain(s4_command_PWM, 0, 180);
   s5_command_PWM = constrain(s5_command_PWM, 0, 180);
