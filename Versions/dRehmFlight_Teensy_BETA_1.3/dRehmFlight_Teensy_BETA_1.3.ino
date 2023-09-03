@@ -340,6 +340,24 @@ float alt_PID = 0.0;
 float tf_alt_prev = 0.0;
 float tf_vel = 0.0;
 
+//Servo centered positions
+float droneServo1 = 0.1;
+float droneServo2 = 0.9;
+float planeServo1 = 0.5;
+float planeServo2 = 0.5;
+float centerServo1 = droneServo1;
+float centerServo2 = droneServo2;
+float transServo = 0.0005;
+
+//Mode globals.
+const int GROUND = 1;
+const int DRONE = 2;
+const int PLANE = 3;
+int vesselMode = GROUND;
+int faderMode = vesselMode;
+bool transition = false;
+
+
 //Flight status
 bool armedFly = false;
 
@@ -484,6 +502,8 @@ void loop() {
   //***********VTOL MOD ABOVE***************
   //****************************************
 
+  modeStatus(); //reads ch6 3 position switch for GROUND, DRONE or PLANE mode and updates global vessel mosde.
+  faderStatus(); //updates fader based on new mode change for transition from drone to plane and vice versa.
   armedStatus(); //only arm the drone when throttle cut is off and throttle is low.
   getIMUdata(); //Get vehicle state //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
   Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
@@ -515,8 +535,56 @@ void loop() {
 //                                                      FUNCTIONS                                                         //
 //========================================================================================================================//
 
+void modeStatus() {
+  //DESCRIPTION: reads ch6 3 position switch for GROUND, DRONE or PLANE mode and updates global vessel mosde.
+
+  if (channel_6_pwm > 1900) {
+    vesselMode = PLANE;
+  }
+  else if ((channel_6_pwm < 1900) && (channel_6_pwm > 1100)) {
+    vesselMode = DRONE;
+  }
+  else {
+    vesselMode = GROUND;
+  }
+}
+
+void faderStatus() { //updates fader based on new mode change for transition from drone to plane and vice versa.
+  transServo = 0.00005;
+
+  //float droneServo1 = 0.1;
+  //float droneServo2 = 0.9;
+  //float planeServo1 = 0.5;
+  //float planeServo2 = 0.5;
+
+
+  if (vesselMode == PLANE) {
+    if (centerServo1 < planeServo1) {
+      centerServo1 = centerServo1 + transServo;
+    }
+    //centerServo1 = planeServo1;
+
+    if (centerServo2 > planeServo2) {
+      centerServo2 = centerServo2 - transServo;
+     }
+    //centerServo2 = planeServo2;
+  }
+
+  if ((vesselMode == DRONE)||(vesselMode == GROUND)) {
+    if (centerServo1 > droneServo1) {
+      centerServo1 = centerServo1 - transServo;
+     }
+    //centerServo1 = droneServo1;
+
+    if (centerServo2 < droneServo2) {
+     centerServo2 = centerServo2 + transServo;
+     }
+    //centerServo2 = droneServo2;
+  }
+}
+
 void armedStatus() {
-  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050)) {
+  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050) && (vesselMode == GROUND)) {
     armedFly = true;
   }
 }
@@ -550,7 +618,7 @@ void controlMixer() {
       s3_command_scaled = 0.37 + 3*pitch_PID;
   */
 
-  if (channel_6_pwm > 1900) { // GROUND MODE
+  if (vesselMode == GROUND) { // GROUND MODE
     m1_command_scaled = thro_des + roll_PID + alt_PID;
     m2_command_scaled = thro_des - roll_PID + alt_PID;
     m3_command_scaled = 0;
@@ -558,16 +626,16 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and yaw
-    s1_command_scaled = 0.5 + pitch_PID - 0.2 * yaw_PID;
-    s2_command_scaled = 0.5 - pitch_PID - 0.2 * yaw_PID;
-    s3_command_scaled = 0.5 + pitch_PID;
+    s1_command_scaled = centerServo1 + pitch_PID - 0.2 * yaw_PID;
+    s2_command_scaled = centerServo2 - pitch_PID - 0.2 * yaw_PID;
+    s3_command_scaled = 0;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
     s7_command_scaled = 0;
   }
 
-  else if ((channel_6_pwm < 1900) && (channel_6_pwm > 1100)) { // DRONE MODE
+  else if (vesselMode == DRONE) { // DRONE MODE
     //throttle and roll
     m1_command_scaled = thro_des + roll_PID;
     m2_command_scaled = thro_des - roll_PID;
@@ -576,17 +644,18 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and yaw
-    s1_command_scaled = 0.5 + pitch_PID - 0.2 * yaw_PID;
-    s2_command_scaled = 0.5 - pitch_PID - 0.2 * yaw_PID;
-    s3_command_scaled = 0.5 + pitch_PID;
+    s1_command_scaled = centerServo1 + pitch_PID - 0.2 * yaw_PID;
+    s2_command_scaled = centerServo2 - pitch_PID - 0.2 * yaw_PID;
+    s3_command_scaled = 0;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
     s7_command_scaled = 0;
   }
 
-  else { // PLANE MODE
+  else if (vesselMode == PLANE) { // PLANE MODE
     //throttle and yaw
+
     m1_command_scaled = thro_des - 0.2 * yaw_PID;
     m2_command_scaled = thro_des + 0.2 * yaw_PID;
     m3_command_scaled = 0;
@@ -594,13 +663,17 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and roll
-    s1_command_scaled = 0.5 - roll_PID + pitch_PID;
-    s2_command_scaled = 0.5 - roll_PID - pitch_PID;
+    s1_command_scaled = centerServo1 - roll_PID + pitch_PID;
+    s2_command_scaled = centerServo2 - roll_PID - pitch_PID;
     s3_command_scaled = 0.5 + pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
     s7_command_scaled = 0;
+  }
+
+  else {
+    vesselMode = DRONE;
   }
 
   //****************************************
