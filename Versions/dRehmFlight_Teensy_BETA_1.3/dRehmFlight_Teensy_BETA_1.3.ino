@@ -3,7 +3,7 @@
 //Editor: Drew Britten
 //Project: Stanton VTOL build
 //Project Start: 01/01/2023
-//Last Updated: 09/03/2023
+//Last Updated: 09/23/2023
 //Version: Beta 1.3
 
 //========================================================================================================================//
@@ -51,7 +51,7 @@ static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to mat
 
 #define USE_MPU6050_I2C //Default
 //****************************************
-//***********VTOL MOD ABOVE***************
+//***********VTOL MOD***************
 //****************************************
 //#define USE_MPU9250_SPI
 
@@ -168,7 +168,7 @@ unsigned long channel_2_fs = 1500; //ail // roll// wrong //ch1
 unsigned long channel_3_fs = 1500; //elev //pitch //wrong / ch2
 unsigned long channel_4_fs = 1500; //rudd //yaw //correct
 unsigned long channel_5_fs = 1000; //gear// failsafe // correct , greater than 1500 = throttle cut
-unsigned long channel_6_fs = 1000; //aux1 // mode // correct
+unsigned long channel_6_fs = 1500; //aux1 // mode // correct
 //****************************************
 //***********VTOL MOD ABOVE***************
 //****************************************
@@ -485,7 +485,7 @@ void loop() {
   loopBlink(); //Indicate we are in main loop with short blink every 1.5 seconds
 
   //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
-  //printRadioData();     //Prints radio pwm values (expected: 1000 to 2000)
+  printRadioData();     //Prints radio pwm values (expected: 1000 to 2000)
   //printDesiredState();  //Prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
   //printGyroData();      //Prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
   //printAccelData();     //Prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
@@ -539,13 +539,13 @@ void modeStatus() {
   //DESCRIPTION: reads ch6 3 position switch for GROUND, DRONE or PLANE mode and updates global vessel mosde.
 
   if (channel_6_pwm > 1900) {
+    vesselMode = GROUND;
+  }
+  else if (channel_6_pwm < 1100) {
     vesselMode = PLANE;
   }
-  else if ((channel_6_pwm < 1900) && (channel_6_pwm > 1100)) {
-    vesselMode = DRONE;
-  }
   else {
-    vesselMode = GROUND;
+    vesselMode = DRONE;
   }
 }
 
@@ -566,26 +566,27 @@ void faderStatus() { //updates fader based on new mode change for transition fro
 
     if (centerServo2 > planeServo2) {
       centerServo2 = centerServo2 - transServo;
-     }
+    }
     //centerServo2 = planeServo2;
   }
 
-  if ((vesselMode == DRONE)||(vesselMode == GROUND)) {
+  if ((vesselMode == DRONE) || (vesselMode == GROUND)) {
     if (centerServo1 > droneServo1) {
       centerServo1 = centerServo1 - transServo;
-     }
+    }
     //centerServo1 = droneServo1;
 
     if (centerServo2 < droneServo2) {
-     centerServo2 = centerServo2 + transServo;
-     }
+      centerServo2 = centerServo2 + transServo;
+    }
     //centerServo2 = droneServo2;
   }
 }
 
 void armedStatus() {
-  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050) && (vesselMode == GROUND)) {
+  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050) && ((vesselMode == DRONE)||(vesselMode == GROUND))) {
     armedFly = true;
+    //Serial.println("ARMED");
   }
 }
 
@@ -764,7 +765,7 @@ void controlAlt() {
   float error_alt = alt_setpoint - tf_alt_filtered;
   error_alt = constrain(error_alt, -alt_error_max, alt_error_max);
   alt_integral = alt_integral + error_alt * dt;
-  if (channel_6_pwm < 1900) {   //Don't let integrator build if fully disarmed
+  if (vesselMode != GROUND) {   //Don't let integrator build if fully disarmed
     alt_integral = 0.0;
   }
   alt_integral = constrain(alt_integral, -alt_int_max, alt_int_max); //saturate integral term to prevent wind up
@@ -1767,6 +1768,7 @@ void throttleCut() {
 
   if ((channel_5_pwm < 1500) || (armedFly == false)) {
     armedFly = false;
+    //Serial.println("DISARMED");
     m1_command_PWM = 120;
     m2_command_PWM = 120;
     m3_command_PWM = 120;
@@ -1871,237 +1873,242 @@ void loopBlink() {
   /*
      It looks cool.
   */
+  if (armedFly == true) {
 
-  if (armedFly == false) {
-    if (current_time - blink_counter > blink_delay) {
-      blink_counter = micros();
-      digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
+  if ((vesselMode == GROUND) && (tf_alt_filtered < alt_maxLidar) && (channel_1_pwm > 1050)) {
+      if (current_time - blink_counter > blink_delay) {
+        blink_counter = micros();
+        digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
 
-      if (blinkAlternate == 1) {
-        blinkAlternate = 0;
-        blink_delay = 100000;
+        if (blinkAlternate == 1) {
+          blinkAlternate = 0;
+          blink_delay = 10000;
+        }
+        else if (blinkAlternate == 0) {
+          blinkAlternate = 1;
+          blink_delay = 50000;
+        }
       }
-      else if (blinkAlternate == 0) {
-        blinkAlternate = 1;
-        blink_delay = 500000;
+    }
+
+    else {
+      digitalWrite(13, HIGH);
+    }
+  }
+
+  
+    else {
+      if (current_time - blink_counter > blink_delay) {
+        blink_counter = micros();
+        digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
+
+        if (blinkAlternate == 1) {
+          blinkAlternate = 0;
+          blink_delay = 100000;
+        }
+        else if (blinkAlternate == 0) {
+          blinkAlternate = 1;
+          blink_delay = 500000;
+        }
       }
     }
   }
-  else if ((channel_6_pwm > 1900) && (tf_alt_filtered < alt_maxLidar)) {
-    if (current_time - blink_counter > blink_delay) {
-      blink_counter = micros();
-      digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
 
-      if (blinkAlternate == 1) {
-        blinkAlternate = 0;
-        blink_delay = 10000;
-      }
-      else if (blinkAlternate == 0) {
-        blinkAlternate = 1;
-        blink_delay = 50000;
-      }
+  void setupBlink(int numBlinks, int upTime, int downTime) {
+    //DESCRIPTION: Simple function to make LED on board blink as desired
+    for (int j = 1; j <= numBlinks; j++) {
+      digitalWrite(13, LOW);
+      delay(downTime);
+      digitalWrite(13, HIGH);
+      delay(upTime);
     }
   }
-  else {
-    digitalWrite(13, HIGH);
+
+  void printRadioData() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F(" CH1: "));
+      Serial.print(channel_1_pwm);
+      Serial.print(F(" CH2: "));
+      Serial.print(channel_2_pwm);
+      Serial.print(F(" CH3: "));
+      Serial.print(channel_3_pwm);
+      Serial.print(F(" CH4: "));
+      Serial.print(channel_4_pwm);
+      Serial.print(F(" CH5: "));
+      Serial.print(channel_5_pwm);
+      Serial.print(F(" CH6: "));
+      Serial.println(channel_6_pwm);
+    }
   }
-}
 
-void setupBlink(int numBlinks, int upTime, int downTime) {
-  //DESCRIPTION: Simple function to make LED on board blink as desired
-  for (int j = 1; j <= numBlinks; j++) {
-    digitalWrite(13, LOW);
-    delay(downTime);
-    digitalWrite(13, HIGH);
-    delay(upTime);
+  void printDesiredState() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("thro_des: "));
+      Serial.print(thro_des);
+      Serial.print(F(" roll_des: "));
+      Serial.print(roll_des);
+      Serial.print(F(" pitch_des: "));
+      Serial.print(pitch_des);
+      Serial.print(F(" yaw_des: "));
+      Serial.println(yaw_des);
+    }
   }
-}
 
-void printRadioData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F(" CH1: "));
-    Serial.print(channel_1_pwm);
-    Serial.print(F(" CH2: "));
-    Serial.print(channel_2_pwm);
-    Serial.print(F(" CH3: "));
-    Serial.print(channel_3_pwm);
-    Serial.print(F(" CH4: "));
-    Serial.print(channel_4_pwm);
-    Serial.print(F(" CH5: "));
-    Serial.print(channel_5_pwm);
-    Serial.print(F(" CH6: "));
-    Serial.println(channel_6_pwm);
+  void printGyroData() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("GyroX: "));
+      Serial.print(GyroX);
+      Serial.print(F(" GyroY: "));
+      Serial.print(GyroY);
+      Serial.print(F(" GyroZ: "));
+      Serial.println(GyroZ);
+    }
   }
-}
 
-void printDesiredState() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("thro_des: "));
-    Serial.print(thro_des);
-    Serial.print(F(" roll_des: "));
-    Serial.print(roll_des);
-    Serial.print(F(" pitch_des: "));
-    Serial.print(pitch_des);
-    Serial.print(F(" yaw_des: "));
-    Serial.println(yaw_des);
+  void printAccelData() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("AccX: "));
+      Serial.print(AccX);
+      Serial.print(F(" AccY: "));
+      Serial.print(AccY);
+      Serial.print(F(" AccZ: "));
+      Serial.println(AccZ);
+    }
   }
-}
 
-void printGyroData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("GyroX: "));
-    Serial.print(GyroX);
-    Serial.print(F(" GyroY: "));
-    Serial.print(GyroY);
-    Serial.print(F(" GyroZ: "));
-    Serial.println(GyroZ);
+  void printMagData() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("MagX: "));
+      Serial.print(MagX);
+      Serial.print(F(" MagY: "));
+      Serial.print(MagY);
+      Serial.print(F(" MagZ: "));
+      Serial.println(MagZ);
+    }
   }
-}
 
-void printAccelData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("AccX: "));
-    Serial.print(AccX);
-    Serial.print(F(" AccY: "));
-    Serial.print(AccY);
-    Serial.print(F(" AccZ: "));
-    Serial.println(AccZ);
+  void printRollPitchYaw() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("roll: "));
+      Serial.print(roll_IMU);
+      Serial.print(F(" pitch: "));
+      Serial.print(pitch_IMU);
+      Serial.print(F(" yaw: "));
+      Serial.println(yaw_IMU);
+    }
   }
-}
 
-void printMagData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("MagX: "));
-    Serial.print(MagX);
-    Serial.print(F(" MagY: "));
-    Serial.print(MagY);
-    Serial.print(F(" MagZ: "));
-    Serial.println(MagZ);
+  void printPIDoutput() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("roll_PID: "));
+      Serial.print(roll_PID);
+      Serial.print(F(" pitch_PID: "));
+      Serial.print(pitch_PID);
+      Serial.print(F(" yaw_PID: "));
+      Serial.println(yaw_PID);
+    }
   }
-}
 
-void printRollPitchYaw() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("roll: "));
-    Serial.print(roll_IMU);
-    Serial.print(F(" pitch: "));
-    Serial.print(pitch_IMU);
-    Serial.print(F(" yaw: "));
-    Serial.println(yaw_IMU);
+  void printLidarMotorCommands() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("Alt_cm: "));
+      Serial.print(tf_alt_filtered);
+      Serial.print(F(" m1_command: "));
+      Serial.print(m1_command_PWM);
+      Serial.print(F(" m2_command: "));
+      Serial.print(m2_command_PWM);
+      Serial.print(F(" Alt_PID: "));
+      Serial.println(alt_PID);
+    }
   }
-}
 
-void printPIDoutput() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("roll_PID: "));
-    Serial.print(roll_PID);
-    Serial.print(F(" pitch_PID: "));
-    Serial.print(pitch_PID);
-    Serial.print(F(" yaw_PID: "));
-    Serial.println(yaw_PID);
+  void GraphLidarMotorCommands() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(tf_alt_filtered);
+      Serial.print(F(" "));
+      Serial.print(m1_command_PWM);
+      Serial.print(F(" "));
+      Serial.println(alt_PID);
+    }
   }
-}
 
-void printLidarMotorCommands() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("Alt_cm: "));
-    Serial.print(tf_alt_filtered);
-    Serial.print(F(" m1_command: "));
-    Serial.print(m1_command_PWM);
-    Serial.print(F(" m2_command: "));
-    Serial.print(m2_command_PWM);
-    Serial.print(F(" Alt_PID: "));
-    Serial.println(alt_PID);
+  void printMotorCommands() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("m1_command: "));
+      Serial.print(m1_command_PWM);
+      Serial.print(F(" m2_command: "));
+      Serial.print(m2_command_PWM);
+      Serial.print(F(" m3_command: "));
+      Serial.print(m3_command_PWM);
+      Serial.print(F(" m4_command: "));
+      Serial.print(m4_command_PWM);
+      Serial.print(F(" m5_command: "));
+      Serial.print(m5_command_PWM);
+      Serial.print(F(" m6_command: "));
+      Serial.println(m6_command_PWM);
+    }
   }
-}
 
-void GraphLidarMotorCommands() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(tf_alt_filtered);
-    Serial.print(F(" "));
-    Serial.print(m1_command_PWM);
-    Serial.print(F(" "));
-    Serial.println(alt_PID);
+  void printServoCommands() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("s1_command: "));
+      Serial.print(s1_command_PWM);
+      Serial.print(F(" s2_command: "));
+      Serial.print(s2_command_PWM);
+      Serial.print(F(" s3_command: "));
+      Serial.print(s3_command_PWM);
+      Serial.print(F(" s4_command: "));
+      Serial.print(s4_command_PWM);
+      Serial.print(F(" s5_command: "));
+      Serial.print(s5_command_PWM);
+      Serial.print(F(" s6_command: "));
+      Serial.print(s6_command_PWM);
+      Serial.print(F(" s7_command: "));
+      Serial.println(s7_command_PWM);
+    }
   }
-}
 
-void printMotorCommands() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("m1_command: "));
-    Serial.print(m1_command_PWM);
-    Serial.print(F(" m2_command: "));
-    Serial.print(m2_command_PWM);
-    Serial.print(F(" m3_command: "));
-    Serial.print(m3_command_PWM);
-    Serial.print(F(" m4_command: "));
-    Serial.print(m4_command_PWM);
-    Serial.print(F(" m5_command: "));
-    Serial.print(m5_command_PWM);
-    Serial.print(F(" m6_command: "));
-    Serial.println(m6_command_PWM);
+  void printLoopRate() {
+    if (current_time - print_counter > 10000) {
+      print_counter = micros();
+      Serial.print(F("dt = "));
+      Serial.println(dt * 1000000.0);
+    }
   }
-}
 
-void printServoCommands() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("s1_command: "));
-    Serial.print(s1_command_PWM);
-    Serial.print(F(" s2_command: "));
-    Serial.print(s2_command_PWM);
-    Serial.print(F(" s3_command: "));
-    Serial.print(s3_command_PWM);
-    Serial.print(F(" s4_command: "));
-    Serial.print(s4_command_PWM);
-    Serial.print(F(" s5_command: "));
-    Serial.print(s5_command_PWM);
-    Serial.print(F(" s6_command: "));
-    Serial.print(s6_command_PWM);
-    Serial.print(F(" s7_command: "));
-    Serial.println(s7_command_PWM);
+  //=========================================================================================//
+
+  //HELPER FUNCTIONS
+
+  float invSqrt(float x) {
+    //Fast inverse sqrt for madgwick filter
+    /*
+      float halfx = 0.5f * x;
+      float y = x;
+      long i = *(long*)&y;
+      i = 0x5f3759df - (i>>1);
+      y = *(float*)&i;
+      y = y * (1.5f - (halfx * y * y));
+      y = y * (1.5f - (halfx * y * y));
+      return y;
+    */
+    /*
+      //alternate form:
+      unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
+      float tmp = *(float*)&i;
+      float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
+      return y;
+    */
+    return 1.0 / sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
   }
-}
-
-void printLoopRate() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("dt = "));
-    Serial.println(dt * 1000000.0);
-  }
-}
-
-//=========================================================================================//
-
-//HELPER FUNCTIONS
-
-float invSqrt(float x) {
-  //Fast inverse sqrt for madgwick filter
-  /*
-    float halfx = 0.5f * x;
-    float y = x;
-    long i = *(long*)&y;
-    i = 0x5f3759df - (i>>1);
-    y = *(float*)&i;
-    y = y * (1.5f - (halfx * y * y));
-    y = y * (1.5f - (halfx * y * y));
-    return y;
-  */
-  /*
-    //alternate form:
-    unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
-    float tmp = *(float*)&i;
-    float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
-    return y;
-  */
-  return 1.0 / sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
-}
