@@ -204,15 +204,16 @@ float GyroErrorZ = 1.00;
 //****************************************
 
 //Controller parameters (take note of defaults before modifying!):
+//check
 float i_limit = 25.0;     //Integrator saturation level, mostly for safety (default 25.0)
-float maxRoll = 12.0;     //Max roll angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
-float maxPitch = 12.0;    //Max pitch angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
+float maxRoll = 12.0;     //12; Max roll angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
+float maxPitch = 34.0;    //12; Max pitch angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
 float maxYaw = 160.0;     //Max yaw rate in deg/sec
 float alt_stpt = 150.0; // change this to your desired hover height, cm
 float alt_maxLidar = 200.0; // Lidar cieling height, cm
 //ROLL
-float Kp_roll_angle = 0.8;    //Roll P-gain - angle mode
-float Ki_roll_angle = 0.3;    //Roll I-gain - angle mode
+float Kp_roll_angle = 0.8;    //0.8; Roll P-gain - angle mode
+float Ki_roll_angle = 0.01;    //0.3 Roll I-gain - angle mode
 float Kd_roll_angle = 0.1;   //Roll D-gain - angle mode (has no effect on controlANGLE2)
 float B_loop_roll = 0.9;      //Roll damping term for controlANGLE2(), lower is more damping (must be between 0 to 1)
 
@@ -1691,6 +1692,8 @@ void calibrateESCs() {
 
 float floatFaderLinear(float param, float param_min, float param_max, float fadeTime, int state, int loopFreq) {
   //DESCRIPTION: Linearly fades a float type variable between min and max bounds based on desired high or low state and time
+  //DESCRIPTION: Linearly fades a float type variable from its current value to the desired value, up or down
+
   /*
       Takes in a float variable, desired minimum and maximum bounds, fade time, high or low desired state, and the loop frequency
       and linearly interpolates that param variable between the maximum and minimum bounds. This function can be called in controlMixer()
