@@ -341,10 +341,10 @@ float tf_alt_prev = 0.0;
 float tf_vel = 0.0;
 
 //Servo centered positions
-float droneServo1 = 0.1;
-float droneServo2 = 0.9;
-float planeServo1 = 0.5;
-float planeServo2 = 0.5;
+float droneServo1 = 0.5;
+float droneServo2 = 0.5;
+float planeServo1 = 0.1;
+float planeServo2 = 0.9;
 float centerServo1 = droneServo1;
 float centerServo2 = droneServo2;
 float transServo = 0.0005;
@@ -430,11 +430,10 @@ void setup() {
 
 
   //Arm servo channels
-  servo1.write(15); //Command servo angle from 0-180 degrees (1000 to 2000 PWM)
-  //V2PORT: 0 backL, 90 up, 150 fwdL
-  servo2.write(165); //Set these to 90 for servos if you do not want them to briefly max out on startup
-  //V2STBD: 180 backL, 90 up, 30 fwdL
-  //V1STBD: 180 backL, 165 up, 90 fwd, 50 down
+  servo1.write(90); //Command servo angle from 0-180 degrees (1000 to 2000 PWM)
+  //V3PORT: 150 back, 90 up, 15 fwd, 0 down.
+  servo2.write(90); //Set these to 90 for servos if you do not want them to briefly max out on startup
+  //V3STBD: 30 back, 90 up, 165 fwd, 180 down
   servo3.write(90); //Keep these at 0 if you are using servo outputs for motors
   servo4.write(0);
   servo5.write(0);
@@ -485,7 +484,7 @@ void loop() {
   loopBlink(); //Indicate we are in main loop with short blink every 1.5 seconds
 
   //Print data at 100hz (uncomment one at a time for troubleshooting) - SELECT ONE:
-  printRadioData();     //Prints radio pwm values (expected: 1000 to 2000)
+  //printRadioData();     //Prints radio pwm values (expected: 1000 to 2000)
   //printDesiredState();  //Prints desired vehicle state commanded in either degrees or deg/sec (expected: +/- maxAXIS for roll, pitch, yaw; 0 to 1 for throttle)
   //printGyroData();      //Prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
   //printAccelData();     //Prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
@@ -552,39 +551,41 @@ void modeStatus() {
 void faderStatus() { //updates fader based on new mode change for transition from drone to plane and vice versa.
   transServo = 0.00005;
 
-  //float droneServo1 = 0.1;
-  //float droneServo2 = 0.9;
-  //float planeServo1 = 0.5;
-  //float planeServo2 = 0.5;
+  //float droneServo1 = 0.5; 90
+  //float droneServo2 = 0.5; 90
+  //float planeServo1 = 0.1; 15
+  //float planeServo2 = 0.9; 165
+  //float centerServo1 = droneServo1;
+  //float centerServo2 = droneServo2;
 
 
   if (vesselMode == PLANE) {
-    if (centerServo1 < planeServo1) {
-      centerServo1 = centerServo1 + transServo;
+    if (centerServo1 > planeServo1) {
+      centerServo1 = centerServo1 - transServo;
     }
     //centerServo1 = planeServo1;
 
-    if (centerServo2 > planeServo2) {
-      centerServo2 = centerServo2 - transServo;
+    if (centerServo2 < planeServo2) {
+      centerServo2 = centerServo2 + transServo;
     }
     //centerServo2 = planeServo2;
   }
 
   if ((vesselMode == DRONE) || (vesselMode == GROUND)) {
-    if (centerServo1 > droneServo1) {
-      centerServo1 = centerServo1 - transServo;
+    if (centerServo1 < droneServo1) {
+      centerServo1 = centerServo1 + transServo;
     }
     //centerServo1 = droneServo1;
 
-    if (centerServo2 < droneServo2) {
-      centerServo2 = centerServo2 + transServo;
+    if (centerServo2 > droneServo2) {
+      centerServo2 = centerServo2 - transServo;
     }
     //centerServo2 = droneServo2;
   }
 }
 
 void armedStatus() {
-  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050) && ((vesselMode == DRONE)||(vesselMode == GROUND))) {
+  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050) && ((vesselMode == DRONE) || (vesselMode == GROUND))) {
     armedFly = true;
     //Serial.println("ARMED");
   }
@@ -627,9 +628,9 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and yaw
-    s1_command_scaled = centerServo1 + pitch_PID - 0.2 * yaw_PID;
-    s2_command_scaled = centerServo2 - pitch_PID - 0.2 * yaw_PID;
-    s3_command_scaled = 0;
+    s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
+    s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
+    s3_command_scaled = 0.5 - 2 * pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
@@ -645,9 +646,9 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and yaw
-    s1_command_scaled = centerServo1 + pitch_PID - 0.2 * yaw_PID;
-    s2_command_scaled = centerServo2 - pitch_PID - 0.2 * yaw_PID;
-    s3_command_scaled = 0;
+    s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
+    s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
+    s3_command_scaled = 0.5 - 2 * pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
@@ -664,9 +665,9 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and roll
-    s1_command_scaled = centerServo1 - roll_PID + pitch_PID;
-    s2_command_scaled = centerServo2 - roll_PID - pitch_PID;
-    s3_command_scaled = 0.5 + pitch_PID;
+    s1_command_scaled = centerServo1 + roll_PID - pitch_PID;
+    s2_command_scaled = centerServo2 + roll_PID + pitch_PID;
+    s3_command_scaled = 0.5 - 5 * pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
@@ -1445,15 +1446,11 @@ void scaleCommands() {
   s7_command_PWM = s7_command_scaled * 180;
   //Constrain commands to servos within servo library bounds
 
-  //LIMITS
-  //DRONE
-  //PORT: 0 backL, 90 up, 150 fwdL
-  //STBD: 180 backL, 90 up, 30 fwdL
-  //PLANE
-  //PORT: 0 back, 15 up, 90 fwd, 120 down.
-  //STBD: 180 back, 165 up, 90 fwd, 60 down
-  s1_command_PWM = constrain(s1_command_PWM, 0, 120);
-  s2_command_PWM = constrain(s2_command_PWM, 60, 180);
+  // V3 limits
+  //V3PORT: 150 back, 90 up, 15 fwd, 0 down.
+  //V3STBD: 30 back, 90 up, 165 fwd, 180 down
+  s1_command_PWM = constrain(s1_command_PWM, 0, 150);
+  s2_command_PWM = constrain(s2_command_PWM, 30, 180);
   s3_command_PWM = constrain(s3_command_PWM, 0, 180);
   s4_command_PWM = constrain(s4_command_PWM, 0, 180);
   s5_command_PWM = constrain(s5_command_PWM, 0, 180);
@@ -1875,7 +1872,7 @@ void loopBlink() {
   */
   if (armedFly == true) {
 
-  if ((vesselMode == GROUND) && (tf_alt_filtered < alt_maxLidar) && (channel_1_pwm > 1050)) {
+    if ((vesselMode == GROUND) && (tf_alt_filtered < alt_maxLidar) && (channel_1_pwm > 1050)) {
       if (current_time - blink_counter > blink_delay) {
         blink_counter = micros();
         digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
@@ -1896,219 +1893,219 @@ void loopBlink() {
     }
   }
 
-  
-    else {
-      if (current_time - blink_counter > blink_delay) {
-        blink_counter = micros();
-        digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
 
-        if (blinkAlternate == 1) {
-          blinkAlternate = 0;
-          blink_delay = 100000;
-        }
-        else if (blinkAlternate == 0) {
-          blinkAlternate = 1;
-          blink_delay = 500000;
-        }
+  else {
+    if (current_time - blink_counter > blink_delay) {
+      blink_counter = micros();
+      digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
+
+      if (blinkAlternate == 1) {
+        blinkAlternate = 0;
+        blink_delay = 100000;
+      }
+      else if (blinkAlternate == 0) {
+        blinkAlternate = 1;
+        blink_delay = 500000;
       }
     }
   }
+}
 
-  void setupBlink(int numBlinks, int upTime, int downTime) {
-    //DESCRIPTION: Simple function to make LED on board blink as desired
-    for (int j = 1; j <= numBlinks; j++) {
-      digitalWrite(13, LOW);
-      delay(downTime);
-      digitalWrite(13, HIGH);
-      delay(upTime);
-    }
+void setupBlink(int numBlinks, int upTime, int downTime) {
+  //DESCRIPTION: Simple function to make LED on board blink as desired
+  for (int j = 1; j <= numBlinks; j++) {
+    digitalWrite(13, LOW);
+    delay(downTime);
+    digitalWrite(13, HIGH);
+    delay(upTime);
   }
+}
 
-  void printRadioData() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F(" CH1: "));
-      Serial.print(channel_1_pwm);
-      Serial.print(F(" CH2: "));
-      Serial.print(channel_2_pwm);
-      Serial.print(F(" CH3: "));
-      Serial.print(channel_3_pwm);
-      Serial.print(F(" CH4: "));
-      Serial.print(channel_4_pwm);
-      Serial.print(F(" CH5: "));
-      Serial.print(channel_5_pwm);
-      Serial.print(F(" CH6: "));
-      Serial.println(channel_6_pwm);
-    }
+void printRadioData() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F(" CH1: "));
+    Serial.print(channel_1_pwm);
+    Serial.print(F(" CH2: "));
+    Serial.print(channel_2_pwm);
+    Serial.print(F(" CH3: "));
+    Serial.print(channel_3_pwm);
+    Serial.print(F(" CH4: "));
+    Serial.print(channel_4_pwm);
+    Serial.print(F(" CH5: "));
+    Serial.print(channel_5_pwm);
+    Serial.print(F(" CH6: "));
+    Serial.println(channel_6_pwm);
   }
+}
 
-  void printDesiredState() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("thro_des: "));
-      Serial.print(thro_des);
-      Serial.print(F(" roll_des: "));
-      Serial.print(roll_des);
-      Serial.print(F(" pitch_des: "));
-      Serial.print(pitch_des);
-      Serial.print(F(" yaw_des: "));
-      Serial.println(yaw_des);
-    }
+void printDesiredState() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("thro_des: "));
+    Serial.print(thro_des);
+    Serial.print(F(" roll_des: "));
+    Serial.print(roll_des);
+    Serial.print(F(" pitch_des: "));
+    Serial.print(pitch_des);
+    Serial.print(F(" yaw_des: "));
+    Serial.println(yaw_des);
   }
+}
 
-  void printGyroData() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("GyroX: "));
-      Serial.print(GyroX);
-      Serial.print(F(" GyroY: "));
-      Serial.print(GyroY);
-      Serial.print(F(" GyroZ: "));
-      Serial.println(GyroZ);
-    }
+void printGyroData() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("GyroX: "));
+    Serial.print(GyroX);
+    Serial.print(F(" GyroY: "));
+    Serial.print(GyroY);
+    Serial.print(F(" GyroZ: "));
+    Serial.println(GyroZ);
   }
+}
 
-  void printAccelData() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("AccX: "));
-      Serial.print(AccX);
-      Serial.print(F(" AccY: "));
-      Serial.print(AccY);
-      Serial.print(F(" AccZ: "));
-      Serial.println(AccZ);
-    }
+void printAccelData() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("AccX: "));
+    Serial.print(AccX);
+    Serial.print(F(" AccY: "));
+    Serial.print(AccY);
+    Serial.print(F(" AccZ: "));
+    Serial.println(AccZ);
   }
+}
 
-  void printMagData() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("MagX: "));
-      Serial.print(MagX);
-      Serial.print(F(" MagY: "));
-      Serial.print(MagY);
-      Serial.print(F(" MagZ: "));
-      Serial.println(MagZ);
-    }
+void printMagData() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("MagX: "));
+    Serial.print(MagX);
+    Serial.print(F(" MagY: "));
+    Serial.print(MagY);
+    Serial.print(F(" MagZ: "));
+    Serial.println(MagZ);
   }
+}
 
-  void printRollPitchYaw() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("roll: "));
-      Serial.print(roll_IMU);
-      Serial.print(F(" pitch: "));
-      Serial.print(pitch_IMU);
-      Serial.print(F(" yaw: "));
-      Serial.println(yaw_IMU);
-    }
+void printRollPitchYaw() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("roll: "));
+    Serial.print(roll_IMU);
+    Serial.print(F(" pitch: "));
+    Serial.print(pitch_IMU);
+    Serial.print(F(" yaw: "));
+    Serial.println(yaw_IMU);
   }
+}
 
-  void printPIDoutput() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("roll_PID: "));
-      Serial.print(roll_PID);
-      Serial.print(F(" pitch_PID: "));
-      Serial.print(pitch_PID);
-      Serial.print(F(" yaw_PID: "));
-      Serial.println(yaw_PID);
-    }
+void printPIDoutput() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("roll_PID: "));
+    Serial.print(roll_PID);
+    Serial.print(F(" pitch_PID: "));
+    Serial.print(pitch_PID);
+    Serial.print(F(" yaw_PID: "));
+    Serial.println(yaw_PID);
   }
+}
 
-  void printLidarMotorCommands() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("Alt_cm: "));
-      Serial.print(tf_alt_filtered);
-      Serial.print(F(" m1_command: "));
-      Serial.print(m1_command_PWM);
-      Serial.print(F(" m2_command: "));
-      Serial.print(m2_command_PWM);
-      Serial.print(F(" Alt_PID: "));
-      Serial.println(alt_PID);
-    }
+void printLidarMotorCommands() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("Alt_cm: "));
+    Serial.print(tf_alt_filtered);
+    Serial.print(F(" m1_command: "));
+    Serial.print(m1_command_PWM);
+    Serial.print(F(" m2_command: "));
+    Serial.print(m2_command_PWM);
+    Serial.print(F(" Alt_PID: "));
+    Serial.println(alt_PID);
   }
+}
 
-  void GraphLidarMotorCommands() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(tf_alt_filtered);
-      Serial.print(F(" "));
-      Serial.print(m1_command_PWM);
-      Serial.print(F(" "));
-      Serial.println(alt_PID);
-    }
+void GraphLidarMotorCommands() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(tf_alt_filtered);
+    Serial.print(F(" "));
+    Serial.print(m1_command_PWM);
+    Serial.print(F(" "));
+    Serial.println(alt_PID);
   }
+}
 
-  void printMotorCommands() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("m1_command: "));
-      Serial.print(m1_command_PWM);
-      Serial.print(F(" m2_command: "));
-      Serial.print(m2_command_PWM);
-      Serial.print(F(" m3_command: "));
-      Serial.print(m3_command_PWM);
-      Serial.print(F(" m4_command: "));
-      Serial.print(m4_command_PWM);
-      Serial.print(F(" m5_command: "));
-      Serial.print(m5_command_PWM);
-      Serial.print(F(" m6_command: "));
-      Serial.println(m6_command_PWM);
-    }
+void printMotorCommands() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("m1_command: "));
+    Serial.print(m1_command_PWM);
+    Serial.print(F(" m2_command: "));
+    Serial.print(m2_command_PWM);
+    Serial.print(F(" m3_command: "));
+    Serial.print(m3_command_PWM);
+    Serial.print(F(" m4_command: "));
+    Serial.print(m4_command_PWM);
+    Serial.print(F(" m5_command: "));
+    Serial.print(m5_command_PWM);
+    Serial.print(F(" m6_command: "));
+    Serial.println(m6_command_PWM);
   }
+}
 
-  void printServoCommands() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("s1_command: "));
-      Serial.print(s1_command_PWM);
-      Serial.print(F(" s2_command: "));
-      Serial.print(s2_command_PWM);
-      Serial.print(F(" s3_command: "));
-      Serial.print(s3_command_PWM);
-      Serial.print(F(" s4_command: "));
-      Serial.print(s4_command_PWM);
-      Serial.print(F(" s5_command: "));
-      Serial.print(s5_command_PWM);
-      Serial.print(F(" s6_command: "));
-      Serial.print(s6_command_PWM);
-      Serial.print(F(" s7_command: "));
-      Serial.println(s7_command_PWM);
-    }
+void printServoCommands() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("s1_command: "));
+    Serial.print(s1_command_PWM);
+    Serial.print(F(" s2_command: "));
+    Serial.print(s2_command_PWM);
+    Serial.print(F(" s3_command: "));
+    Serial.print(s3_command_PWM);
+    Serial.print(F(" s4_command: "));
+    Serial.print(s4_command_PWM);
+    Serial.print(F(" s5_command: "));
+    Serial.print(s5_command_PWM);
+    Serial.print(F(" s6_command: "));
+    Serial.print(s6_command_PWM);
+    Serial.print(F(" s7_command: "));
+    Serial.println(s7_command_PWM);
   }
+}
 
-  void printLoopRate() {
-    if (current_time - print_counter > 10000) {
-      print_counter = micros();
-      Serial.print(F("dt = "));
-      Serial.println(dt * 1000000.0);
-    }
+void printLoopRate() {
+  if (current_time - print_counter > 10000) {
+    print_counter = micros();
+    Serial.print(F("dt = "));
+    Serial.println(dt * 1000000.0);
   }
+}
 
-  //=========================================================================================//
+//=========================================================================================//
 
-  //HELPER FUNCTIONS
+//HELPER FUNCTIONS
 
-  float invSqrt(float x) {
-    //Fast inverse sqrt for madgwick filter
-    /*
-      float halfx = 0.5f * x;
-      float y = x;
-      long i = *(long*)&y;
-      i = 0x5f3759df - (i>>1);
-      y = *(float*)&i;
-      y = y * (1.5f - (halfx * y * y));
-      y = y * (1.5f - (halfx * y * y));
-      return y;
-    */
-    /*
-      //alternate form:
-      unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
-      float tmp = *(float*)&i;
-      float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
-      return y;
-    */
-    return 1.0 / sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
-  }
+float invSqrt(float x) {
+  //Fast inverse sqrt for madgwick filter
+  /*
+    float halfx = 0.5f * x;
+    float y = x;
+    long i = *(long*)&y;
+    i = 0x5f3759df - (i>>1);
+    y = *(float*)&i;
+    y = y * (1.5f - (halfx * y * y));
+    y = y * (1.5f - (halfx * y * y));
+    return y;
+  */
+  /*
+    //alternate form:
+    unsigned int i = 0x5F1F1412 - (*(unsigned int*)&x >> 1);
+    float tmp = *(float*)&i;
+    float y = tmp * (1.69000231f - 0.714158168f * x * tmp * tmp);
+    return y;
+  */
+  return 1.0 / sqrtf(x); //Teensy is fast enough to just take the compute penalty lol suck it arduino nano
+}
