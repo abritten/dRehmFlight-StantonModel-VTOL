@@ -3,7 +3,7 @@
 //Editor: Drew Britten
 //Project: Stanton VTOL build
 //Project Start: 01/01/2023
-//Last Updated: 09/23/2023
+//Last Updated: 12/3/2023
 //Version: Beta 1.3
 
 //========================================================================================================================//
@@ -189,13 +189,15 @@ float MagScaleZ = 1.0;
 
 //IMU calibration parameters - calibrate IMU using calculate_IMU_error() in the void setup() to get these values, then comment out calculate_IMU_error()
 
-//5/20/23
-float AccErrorX = 0.03;
-float AccErrorY = -0.07;
+//10/27/23
+float AccErrorX = 0.05;
+float AccErrorY = -0.02;
 float AccErrorZ = -0.08;
-float GyroErrorX = -4.49;
-float GyroErrorY = -1.50;
-float GyroErrorZ = 1.00;
+float GyroErrorX = -4.93;
+float GyroErrorY = -1.49;
+float GyroErrorZ = 0.93;
+
+
 
 
 
@@ -207,13 +209,13 @@ float GyroErrorZ = 1.00;
 //check
 float i_limit = 25.0;     //Integrator saturation level, mostly for safety (default 25.0)
 float maxRoll = 12.0;     //12; Max roll angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
-float maxPitch = 34.0;    //12; Max pitch angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
+float maxPitch = 12.0;    //12; Max pitch angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
 float maxYaw = 160.0;     //Max yaw rate in deg/sec
 float alt_stpt = 150.0; // change this to your desired hover height, cm
 float alt_maxLidar = 200.0; // Lidar cieling height, cm
 //ROLL
 float Kp_roll_angle = 0.8;    //0.8; Roll P-gain - angle mode
-float Ki_roll_angle = 0.01;    //0.3 Roll I-gain - angle mode
+float Ki_roll_angle = 0.3;    //0.3 Roll I-gain - angle mode
 float Kd_roll_angle = 0.1;   //Roll D-gain - angle mode (has no effect on controlANGLE2)
 float B_loop_roll = 0.9;      //Roll damping term for controlANGLE2(), lower is more damping (must be between 0 to 1)
 
@@ -420,13 +422,17 @@ void setup() {
   //****************************************
 
   /*
-    //5/20/23
-    float AccErrorX = 0.03;
-    float AccErrorY = -0.07;
-    float AccErrorZ = -0.08;
-    float GyroErrorX = -4.49;
-    float GyroErrorY = -1.50;
-    float GyroErrorZ = 1.00;
+    //10/27/23
+
+float AccErrorX = 0.05;
+float AccErrorY = -0.02;
+float AccErrorZ = -0.08;
+float GyroErrorX = -4.93;
+float GyroErrorY = -1.49;
+float GyroErrorZ = 0.93;
+
+
+
   */
 
 
