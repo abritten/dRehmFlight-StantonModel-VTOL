@@ -355,7 +355,7 @@ float transServo = 0.0005;
 //Mode globals.
 const int GROUND = 1;
 const int DRONE = 2;
-const int PLANE = 2; //3; //Change to 3 for full forward fligt. Still unstable.
+const int PLANE = DRONE; //3; //Change to 3 for full forward fligt. Still unstable.
 int vesselMode = GROUND;
 int faderMode = vesselMode;
 bool transition = false;
