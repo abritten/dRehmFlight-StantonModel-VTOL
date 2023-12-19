@@ -3,7 +3,7 @@
 //Editor: Drew Britten
 //Project: Stanton VTOL build
 //Project Start: 01/01/2023
-//Last Updated: 12/3/2023
+//Last Updated: 12/19/2023
 //Version: Beta 1.3
 
 //========================================================================================================================//
@@ -355,7 +355,7 @@ float transServo = 0.0005;
 //Mode globals.
 const int GROUND = 1;
 const int DRONE = 2;
-const int PLANE = 3;
+const int PLANE = 2; //3; //Change to 3 for full forward fligt. Still unstable.
 int vesselMode = GROUND;
 int faderMode = vesselMode;
 bool transition = false;
