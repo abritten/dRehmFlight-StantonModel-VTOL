@@ -3,7 +3,7 @@
 //Editor: Drew Britten
 //Project: Stanton VTOL build
 //Project Start: 01/01/2023
-//Last Updated: 08/22/2023
+//Last Updated: 12/19/2023
 //Version: Beta 1.3
 
 //========================================================================================================================//
@@ -51,7 +51,7 @@ static const uint8_t num_DSM_channels = 6; //If using DSM RX, change this to mat
 
 #define USE_MPU6050_I2C //Default
 //****************************************
-//***********VTOL MOD ABOVE***************
+//***********VTOL MOD***************
 //****************************************
 //#define USE_MPU9250_SPI
 
@@ -168,7 +168,7 @@ unsigned long channel_2_fs = 1500; //ail // roll// wrong //ch1
 unsigned long channel_3_fs = 1500; //elev //pitch //wrong / ch2
 unsigned long channel_4_fs = 1500; //rudd //yaw //correct
 unsigned long channel_5_fs = 1000; //gear// failsafe // correct , greater than 1500 = throttle cut
-unsigned long channel_6_fs = 1000; //aux1 // mode // correct
+unsigned long channel_6_fs = 1500; //aux1 // mode // correct
 //****************************************
 //***********VTOL MOD ABOVE***************
 //****************************************
@@ -189,13 +189,15 @@ float MagScaleZ = 1.0;
 
 //IMU calibration parameters - calibrate IMU using calculate_IMU_error() in the void setup() to get these values, then comment out calculate_IMU_error()
 
-//5/20/23
-float AccErrorX = 0.03;
-float AccErrorY = -0.07;
+//10/27/23
+float AccErrorX = 0.05;
+float AccErrorY = -0.02;
 float AccErrorZ = -0.08;
-float GyroErrorX = -4.49;
-float GyroErrorY = -1.50;
-float GyroErrorZ = 1.00;
+float GyroErrorX = -4.93;
+float GyroErrorY = -1.49;
+float GyroErrorZ = 0.93;
+
+
 
 
 
@@ -204,15 +206,16 @@ float GyroErrorZ = 1.00;
 //****************************************
 
 //Controller parameters (take note of defaults before modifying!):
+//check
 float i_limit = 25.0;     //Integrator saturation level, mostly for safety (default 25.0)
-float maxRoll = 12.0;     //Max roll angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
-float maxPitch = 12.0;    //Max pitch angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
+float maxRoll = 12.0;     //12; Max roll angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
+float maxPitch = 12.0;    //12; Max pitch angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode
 float maxYaw = 160.0;     //Max yaw rate in deg/sec
 float alt_stpt = 150.0; // change this to your desired hover height, cm
 float alt_maxLidar = 200.0; // Lidar cieling height, cm
 //ROLL
-float Kp_roll_angle = 0.8;    //Roll P-gain - angle mode
-float Ki_roll_angle = 0.3;    //Roll I-gain - angle mode
+float Kp_roll_angle = 0.8;    //0.8; Roll P-gain - angle mode
+float Ki_roll_angle = 0.3;    //0.3 Roll I-gain - angle mode
 float Kd_roll_angle = 0.1;   //Roll D-gain - angle mode (has no effect on controlANGLE2)
 float B_loop_roll = 0.9;      //Roll damping term for controlANGLE2(), lower is more damping (must be between 0 to 1)
 
@@ -340,6 +343,24 @@ float alt_PID = 0.0;
 float tf_alt_prev = 0.0;
 float tf_vel = 0.0;
 
+//Servo centered positions
+float droneServo1 = 0.5;
+float droneServo2 = 0.5;
+float planeServo1 = 0.1;
+float planeServo2 = 0.9;
+float centerServo1 = droneServo1;
+float centerServo2 = droneServo2;
+float transServo = 0.0005;
+
+//Mode globals.
+const int GROUND = 1;
+const int DRONE = 2;
+const int PLANE = DRONE; //3; //Change to 3 for full forward fligt. Still unstable.
+int vesselMode = GROUND;
+int faderMode = vesselMode;
+bool transition = false;
+
+
 //Flight status
 bool armedFly = false;
 
@@ -401,22 +422,25 @@ void setup() {
   //****************************************
 
   /*
-    //5/20/23
-    float AccErrorX = 0.03;
-    float AccErrorY = -0.07;
-    float AccErrorZ = -0.08;
-    float GyroErrorX = -4.49;
-    float GyroErrorY = -1.50;
-    float GyroErrorZ = 1.00;
+    //10/27/23
+
+float AccErrorX = 0.05;
+float AccErrorY = -0.02;
+float AccErrorZ = -0.08;
+float GyroErrorX = -4.93;
+float GyroErrorY = -1.49;
+float GyroErrorZ = 0.93;
+
+
+
   */
 
 
   //Arm servo channels
   servo1.write(90); //Command servo angle from 0-180 degrees (1000 to 2000 PWM)
-  //V2PORT: 0 backL, 90 up, 150 fwdL
+  //V3PORT: 150 back, 90 up, 15 fwd, 0 down.
   servo2.write(90); //Set these to 90 for servos if you do not want them to briefly max out on startup
-  //V2STBD: 180 backL, 90 up, 30 fwdL
-  //V1STBD: 180 backL, 165 up, 90 fwd, 50 down
+  //V3STBD: 30 back, 90 up, 165 fwd, 180 down
   servo3.write(90); //Keep these at 0 if you are using servo outputs for motors
   servo4.write(0);
   servo5.write(0);
@@ -484,6 +508,8 @@ void loop() {
   //***********VTOL MOD ABOVE***************
   //****************************************
 
+  modeStatus(); //reads ch6 3 position switch for GROUND, DRONE or PLANE mode and updates global vessel mosde.
+  faderStatus(); //updates fader based on new mode change for transition from drone to plane and vice versa.
   armedStatus(); //only arm the drone when throttle cut is off and throttle is low.
   getIMUdata(); //Get vehicle state //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
   Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
@@ -515,9 +541,60 @@ void loop() {
 //                                                      FUNCTIONS                                                         //
 //========================================================================================================================//
 
+void modeStatus() {
+  //DESCRIPTION: reads ch6 3 position switch for GROUND, DRONE or PLANE mode and updates global vessel mosde.
+
+  if (channel_6_pwm > 1900) {
+    vesselMode = GROUND;
+  }
+  else if (channel_6_pwm < 1100) {
+    vesselMode = PLANE;
+  }
+  else {
+    vesselMode = DRONE;
+  }
+}
+
+void faderStatus() { //updates fader based on new mode change for transition from drone to plane and vice versa.
+  transServo = 0.00005;
+
+  //float droneServo1 = 0.5; 90
+  //float droneServo2 = 0.5; 90
+  //float planeServo1 = 0.1; 15
+  //float planeServo2 = 0.9; 165
+  //float centerServo1 = droneServo1;
+  //float centerServo2 = droneServo2;
+
+
+  if (vesselMode == PLANE) {
+    if (centerServo1 > planeServo1) {
+      centerServo1 = centerServo1 - transServo;
+    }
+    //centerServo1 = planeServo1;
+
+    if (centerServo2 < planeServo2) {
+      centerServo2 = centerServo2 + transServo;
+    }
+    //centerServo2 = planeServo2;
+  }
+
+  if ((vesselMode == DRONE) || (vesselMode == GROUND)) {
+    if (centerServo1 < droneServo1) {
+      centerServo1 = centerServo1 + transServo;
+    }
+    //centerServo1 = droneServo1;
+
+    if (centerServo2 > droneServo2) {
+      centerServo2 = centerServo2 - transServo;
+    }
+    //centerServo2 = droneServo2;
+  }
+}
+
 void armedStatus() {
-  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050)) {
+  if ((channel_5_pwm > 1500) && (channel_1_pwm < 1050) && ((vesselMode == DRONE) || (vesselMode == GROUND))) {
     armedFly = true;
+    //Serial.println("ARMED");
   }
 }
 
@@ -550,8 +627,7 @@ void controlMixer() {
       s3_command_scaled = 0.37 + 3*pitch_PID;
   */
 
-  ////*************DRONE HOVER LIDAR MODE*****************
-  if (channel_6_pwm > 1900) {
+  if (vesselMode == GROUND) { // GROUND MODE
     m1_command_scaled = thro_des + roll_PID + alt_PID;
     m2_command_scaled = thro_des - roll_PID + alt_PID;
     m3_command_scaled = 0;
@@ -559,16 +635,16 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and yaw
-    s1_command_scaled = 0.5 + pitch_PID - 0.2 * yaw_PID;
-    s2_command_scaled = 0.5 - pitch_PID - 0.2 * yaw_PID;
-    s3_command_scaled = 0.5 + pitch_PID;
+    s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
+    s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
+    s3_command_scaled = 0.5 - 2 * pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
     s7_command_scaled = 0;
   }
-  ////*************DRONE MODE*****************
-  else {
+
+  else if (vesselMode == DRONE) { // DRONE MODE
     //throttle and roll
     m1_command_scaled = thro_des + roll_PID;
     m2_command_scaled = thro_des - roll_PID;
@@ -577,18 +653,58 @@ void controlMixer() {
     m5_command_scaled = 0;
     m6_command_scaled = 0;
     //pitch and yaw
-    s1_command_scaled = 0.5 + pitch_PID - 0.2 * yaw_PID;
-    s2_command_scaled = 0.5 - pitch_PID - 0.2 * yaw_PID;
-    s3_command_scaled = 0.5 + pitch_PID;
+    s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
+    s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
+    s3_command_scaled = 0.5 - 2 * pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
     s7_command_scaled = 0;
   }
 
+  else if (vesselMode == PLANE) { // PLANE MODE
+    //throttle and yaw
+
+    m1_command_scaled = thro_des - 0.2 * yaw_PID;
+    m2_command_scaled = thro_des + 0.2 * yaw_PID;
+    m3_command_scaled = 0;
+    m4_command_scaled = 0;
+    m5_command_scaled = 0;
+    m6_command_scaled = 0;
+    //pitch and roll
+    s1_command_scaled = centerServo1 + roll_PID - pitch_PID;
+    s2_command_scaled = centerServo2 + roll_PID + pitch_PID;
+    s3_command_scaled = 0.5 - 5 * pitch_PID;
+    s4_command_scaled = 0;
+    s5_command_scaled = 0;
+    s6_command_scaled = 0;
+    s7_command_scaled = 0;
+  }
+
+  else {
+    vesselMode = DRONE;
+  }
+
   //****************************************
   //***********VTOL MOD MIXER***************
   //****************************************
+  /*
+    Lidar Drone Plane
+    Global mode = GROUND, DRONE, PLANE
+    CH6 : 3 mode switch for global mode.
+    ARMES Status = thrCut off, thr low, Ground mode
+    Fader function : when global switches from drone to plane, follow a scripted transition.
+                  where servos tilt and lock forward in a time interval.
+                  elevator takes full effect with pitch axis instantly.
+                  roll swithces from thrust diff to servo diff once rotor tilt lock is complete.
+                  yaw switches from servo diff to thrust diff once rotor tilt lock is complete.
+                  Throttle maintains 50% during fader transition.
+                  From plane to drone, the order is reversed with 50% throttle but with twice as fast or more, tilt rotor lock speed.
+                  Elevator is determined off of aerodynamic behavior if needed but will center during plane to drone transition.
+                  Fader transition can be canceled and reversed.
+    Fader is only initialized when drone mode is selected afer startup.
+  */
+
 
   /*
     //TOM STANTON MIXER EDIT
@@ -657,7 +773,7 @@ void controlAlt() {
   float error_alt = alt_setpoint - tf_alt_filtered;
   error_alt = constrain(error_alt, -alt_error_max, alt_error_max);
   alt_integral = alt_integral + error_alt * dt;
-  if (channel_6_pwm < 1900) {   //Don't let integrator build if fully disarmed
+  if (vesselMode != GROUND) {   //Don't let integrator build if fully disarmed
     alt_integral = 0.0;
   }
   alt_integral = constrain(alt_integral, -alt_int_max, alt_int_max); //saturate integral term to prevent wind up
@@ -1337,9 +1453,9 @@ void scaleCommands() {
   s7_command_PWM = s7_command_scaled * 180;
   //Constrain commands to servos within servo library bounds
 
-  //LIMITS
-  //V2PORT: 0 backL, 90 up, 150 fwdL
-  //V2STBD: 180 backL, 90 up, 30 fwdL
+  // V3 limits
+  //V3PORT: 150 back, 90 up, 15 fwd, 0 down.
+  //V3STBD: 30 back, 90 up, 165 fwd, 180 down
   s1_command_PWM = constrain(s1_command_PWM, 0, 150);
   s2_command_PWM = constrain(s2_command_PWM, 30, 180);
   s3_command_PWM = constrain(s3_command_PWM, 0, 180);
@@ -1582,6 +1698,8 @@ void calibrateESCs() {
 
 float floatFaderLinear(float param, float param_min, float param_max, float fadeTime, int state, int loopFreq) {
   //DESCRIPTION: Linearly fades a float type variable between min and max bounds based on desired high or low state and time
+  //DESCRIPTION: Linearly fades a float type variable from its current value to the desired value, up or down
+
   /*
       Takes in a float variable, desired minimum and maximum bounds, fade time, high or low desired state, and the loop frequency
       and linearly interpolates that param variable between the maximum and minimum bounds. This function can be called in controlMixer()
@@ -1656,6 +1774,7 @@ void throttleCut() {
 
   if ((channel_5_pwm < 1500) || (armedFly == false)) {
     armedFly = false;
+    //Serial.println("DISARMED");
     m1_command_PWM = 120;
     m2_command_PWM = 120;
     m3_command_PWM = 120;
@@ -1760,8 +1879,31 @@ void loopBlink() {
   /*
      It looks cool.
   */
+  if (armedFly == true) {
 
-  if (armedFly == false) {
+    if ((vesselMode == GROUND) && (tf_alt_filtered < alt_maxLidar) && (channel_1_pwm > 1050)) {
+      if (current_time - blink_counter > blink_delay) {
+        blink_counter = micros();
+        digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
+
+        if (blinkAlternate == 1) {
+          blinkAlternate = 0;
+          blink_delay = 10000;
+        }
+        else if (blinkAlternate == 0) {
+          blinkAlternate = 1;
+          blink_delay = 50000;
+        }
+      }
+    }
+
+    else {
+      digitalWrite(13, HIGH);
+    }
+  }
+
+
+  else {
     if (current_time - blink_counter > blink_delay) {
       blink_counter = micros();
       digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
@@ -1775,24 +1917,6 @@ void loopBlink() {
         blink_delay = 500000;
       }
     }
-  }
-  else if ((channel_6_pwm > 1900) && (tf_alt_filtered < alt_maxLidar)) {
-    if (current_time - blink_counter > blink_delay) {
-      blink_counter = micros();
-      digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
-
-      if (blinkAlternate == 1) {
-        blinkAlternate = 0;
-        blink_delay = 10000;
-      }
-      else if (blinkAlternate == 0) {
-        blinkAlternate = 1;
-        blink_delay = 50000;
-      }
-    }
-  }
-  else {
-    digitalWrite(13, HIGH);
   }
 }
 

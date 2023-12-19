@@ -3,13 +3,17 @@
 ## Project : dRehmFlight-StantonModel-VTOL
  This is a replica of the [Stanton RC VTOL model](https://youtu.be/XPXN0QejqM0) using the [DrehmFlight FC](https://github.com/nickrehm/dRehmFlight). Replicated and modified by [abritten](https://github.com/abritten) (Drew Britten).
 
-- [x] [VTOL Flight Demo](https://youtu.be/psxmBfpBxX4)
+- [x] [Plane Mode Maiden Flight](https://youtu.be/zkM9pKgCQkg) **NEW!**
+
+
+- [x] [Drone Mode Flight Demo](https://youtu.be/psxmBfpBxX4)
+
+
 - [x] [VTOL Datasheet](Resources/Specs/Datasheet.pdf)
 
-![](Resources/Images/CADsmall.png)
-![](Resources/Images/fieldsmall.png)
-<!--![](Resources/Images/CAD.png) 
-![](Resources/Images/field.jpg) -->
+![](Resources/Images/planeCAD.png)
+![](Resources/Images/plane.jpeg)
+![](Resources/Images/planeFlight.png)
 
 ---
 
