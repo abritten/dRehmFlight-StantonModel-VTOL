@@ -276,6 +276,7 @@ PWMServo servo6;
 PWMServo servo7;
 
 TFMPlus lidar; //tfmini plus lidar distance sensor
+const int O3ArmPin = 24; //Arm DJI O3
 
 //========================================================================================================================//
 
@@ -384,6 +385,7 @@ void setup() {
   pinMode(m4Pin, OUTPUT);
   pinMode(m5Pin, OUTPUT);
   pinMode(m6Pin, OUTPUT);
+  pinMode(O3ArmPin, OUTPUT);
   servo1.attach(servo1Pin, 900, 2100); //Pin, min PWM value, max PWM value
   servo2.attach(servo2Pin, 900, 2100);
   servo3.attach(servo3Pin, 900, 2100);
@@ -424,12 +426,12 @@ void setup() {
   /*
     //10/27/23
 
-float AccErrorX = 0.05;
-float AccErrorY = -0.02;
-float AccErrorZ = -0.08;
-float GyroErrorX = -4.93;
-float GyroErrorY = -1.49;
-float GyroErrorZ = 0.93;
+    float AccErrorX = 0.05;
+    float AccErrorY = -0.02;
+    float AccErrorZ = -0.08;
+    float GyroErrorX = -4.93;
+    float GyroErrorY = -1.49;
+    float GyroErrorZ = 0.93;
 
 
 
@@ -511,6 +513,7 @@ void loop() {
   modeStatus(); //reads ch6 3 position switch for GROUND, DRONE or PLANE mode and updates global vessel mosde.
   faderStatus(); //updates fader based on new mode change for transition from drone to plane and vice versa.
   armedStatus(); //only arm the drone when throttle cut is off and throttle is low.
+  o3Arming(); //Singal high or low to DJI O3 circuit for arm/disarm.
   getIMUdata(); //Get vehicle state //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
   Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
   getDesState(); //Compute desired state //Convert raw commands to normalized values based on saturated control limits
@@ -601,6 +604,15 @@ void armedStatus() {
 //****************************************
 //***********VTOL MOD ABOVE***************
 //****************************************
+void o3Arming() {
+  if (channel_5_pwm > 1500) {
+    digitalWrite(O3ArmPin, HIGH);
+    //Serial.println("on");
+  }
+  else {
+    digitalWrite(O3ArmPin, LOW);
+  }
+}
 
 void controlMixer() {
   //DESCRIPTION: Mixes scaled commands from PID controller to actuator outputs based on vehicle configuration
