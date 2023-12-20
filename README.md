@@ -16,7 +16,7 @@
 ![](Resources/Images/DJIO3Field.jpg)
 ![](Resources/Images/DJIO3PlaneCAD.png)
 ![](Resources/Images/Hardware/DJIO3_CAD/1.png)
-![](Resources/Images/DJIO3image.PNG)
+![](Resources/Images/DJIO3image.jpg)
 
 
 
