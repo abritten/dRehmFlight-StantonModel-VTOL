@@ -32,7 +32,7 @@ The arming/disarming is a logic 3.3V or 0V from Teensy pin 24 main flight contro
 
 An External ESC fan is recommended to be placed ontop of the Air unit for cooling. The DJI O3 Air unit will shut down if it overheats. 
 
-![](Resources/Images/DJI_O3_Schem.PNG)
+![](Resources/Images/DJI_O3_Schem.png)
 
 
 ---
