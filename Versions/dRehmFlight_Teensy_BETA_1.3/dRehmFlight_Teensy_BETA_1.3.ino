@@ -347,8 +347,8 @@ float tf_vel = 0.0;
 //Servo centered positions
 float droneServo1 = 0.5;
 float droneServo2 = 0.5;
-float planeServo1 = 0.1;
-float planeServo2 = 0.9;
+float planeServo1 = 0.4;//0.1;
+float planeServo2 = 0.6;//0.9;
 float centerServo1 = droneServo1;
 float centerServo2 = droneServo2;
 float transServo = 0.0005;
@@ -356,7 +356,7 @@ float transServo = 0.0005;
 //Mode globals.
 const int GROUND = 1;
 const int DRONE = 2;
-const int PLANE = DRONE; //3; //Change to 3 for full forward fligt. Still unstable.
+const int PLANE = 3; //Change to 3 for full forward fligt. Still unstable.
 int vesselMode = GROUND;
 int faderMode = vesselMode;
 bool transition = false;
@@ -649,7 +649,7 @@ void controlMixer() {
     //pitch and yaw
     s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
     s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
-    s3_command_scaled = 0.5 - 2 * pitch_PID;
+    s3_command_scaled = 0.5;// - 2 * pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
@@ -675,18 +675,17 @@ void controlMixer() {
   }
 
   else if (vesselMode == PLANE) { // PLANE MODE
-    //throttle and yaw
-
-    m1_command_scaled = thro_des - 0.2 * yaw_PID;
-    m2_command_scaled = thro_des + 0.2 * yaw_PID;
+    //throttle and roll
+    m1_command_scaled = thro_des + roll_PID;
+    m2_command_scaled = thro_des - roll_PID;
     m3_command_scaled = 0;
     m4_command_scaled = 0;
     m5_command_scaled = 0;
     m6_command_scaled = 0;
-    //pitch and roll
-    s1_command_scaled = centerServo1 + roll_PID - pitch_PID;
-    s2_command_scaled = centerServo2 + roll_PID + pitch_PID;
-    s3_command_scaled = 0.5 - 5 * pitch_PID;
+    //pitch and yaw
+    s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
+    s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
+    s3_command_scaled = 0.5 - 2 * pitch_PID;
     s4_command_scaled = 0;
     s5_command_scaled = 0;
     s6_command_scaled = 0;
