@@ -5,17 +5,18 @@
 
 - [x] [DJI O3 Air unit - Drone mode Demo](https://youtu.be/Lrjd_JvYwW0) **LATEST!**
 
+- [x] [Plane Mode Demo Flight](https://youtu.be/aAkB7G_GQ3Q)
+
 - [x] [Plane Mode Maiden Flight](https://youtu.be/zkM9pKgCQkg)
 
-
-- [x] [Drone Mode Flight Demo](https://youtu.be/psxmBfpBxX4)
-
+- [x] [Drone Mode Flight](https://youtu.be/psxmBfpBxX4)
 
 - [x] [VTOL Datasheet](Resources/Specs/Datasheet.pdf)
 
-![](Resources/Images/DJIO3Field.jpg)
+
 ![](Resources/Images/DJIO3PlaneCAD.png)
-![](Resources/Images/Hardware/DJIO3_CAD/1.png)
+![](Resources/Images/planeFlight.png)
+![](Resources/Images/DJIO3Field.jpg)
 ![](Resources/Images/DJIO3image.jpg)
 
 
@@ -31,8 +32,6 @@ This branch uses the [SAMD21-Arduino DJI O3 Arming repository](https://github.co
 The arming/disarming is a logic 3.3V or 0V from Teensy pin 24 main flight controller. The SAMD21 recieves this TTL on pin 3 and will then arm or disarm based on the high or low state. The SAMD21 requires its own Arduino IDE, follow the README.md in its subfolder to program successfully.
 
 An External ESC fan is recommended to be placed ontop of the Air unit for cooling. The DJI O3 Air unit will shut down if it overheats. 
-
-![](Resources/Images/DJI_O3_Schem.png)
 
 
 ---
