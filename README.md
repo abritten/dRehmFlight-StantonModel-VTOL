@@ -3,7 +3,9 @@
 ## Project : dRehmFlight-StantonModel-VTOL
  This is a replica of the [Stanton RC VTOL model](https://youtu.be/XPXN0QejqM0) using the [DrehmFlight FC](https://github.com/nickrehm/dRehmFlight). Replicated and modified by [abritten](https://github.com/abritten) (Drew Britten).
 
-- [x] [Plane Mode Maiden Flight](https://youtu.be/zkM9pKgCQkg) **NEW!**
+- [x] [DJI O3 Air unit - Drone mode Demo](https://youtu.be/Lrjd_JvYwW0) **LATEST!**
+
+- [x] [Plane Mode Maiden Flight](https://youtu.be/zkM9pKgCQkg)
 
 
 - [x] [Drone Mode Flight Demo](https://youtu.be/psxmBfpBxX4)
@@ -11,9 +13,27 @@
 
 - [x] [VTOL Datasheet](Resources/Specs/Datasheet.pdf)
 
-![](Resources/Images/planeCAD.png)
-![](Resources/Images/plane.jpeg)
-![](Resources/Images/planeFlight.png)
+![](Resources/Images/DJIO3Field.jpg)
+![](Resources/Images/DJIO3PlaneCAD.png)
+![](Resources/Images/Hardware/DJIO3_CAD/1.png)
+![](Resources/Images/DJIO3image.jpg)
+
+
+
+## DJI O3 Setup
+
+This branch uses the [SAMD21-Arduino DJI O3 Arming repository](https://github.com/ramiss/arduino_DJI_03_RC_ARM), created by [ramiss](https://github.com/ramiss) and modified by [abritten](https://github.com/abritten) (Drew Britten). The SAMD21 will enable the **full power mode** (50mbps) of the O3 Air unit and will also enable **low power mode** to conserve battery and reduce excesive heat from the Air unit.
+
+**Arm     = Full power mode**
+
+**Disarm  = Low power mode**
+
+The arming/disarming is a logic 3.3V or 0V from Teensy pin 24 main flight controller. The SAMD21 recieves this TTL on pin 3 and will then arm or disarm based on the high or low state. The SAMD21 requires its own Arduino IDE, follow the README.md in its subfolder to program successfully.
+
+An External ESC fan is recommended to be placed ontop of the Air unit for cooling. The DJI O3 Air unit will shut down if it overheats. 
+
+![](Resources/Images/DJI_O3_Schem.png)
+
 
 ---
 
