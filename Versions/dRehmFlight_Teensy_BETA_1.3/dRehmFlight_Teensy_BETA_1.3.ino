@@ -476,7 +476,14 @@ void setup() {
 
   //If using MPU9250 IMU, uncomment for one-time magnetometer calibration (may need to repeat for new locations)
   //calibrateMagnetometer(); //Generates magentometer error and scale factors to be pasted in user-specified variables section
-
+    m3_command_scaled = 0;
+    m4_command_scaled = 0;
+    m5_command_scaled = 0;
+    m6_command_scaled = 0;
+    s4_command_scaled = 0;
+    s5_command_scaled = 0;
+    s6_command_scaled = 0;
+    s7_command_scaled = 0;
 }
 
 
@@ -606,11 +613,11 @@ void armedStatus() {
 //****************************************
 void o3Arming() {
   if (channel_5_pwm > 1500) {
-    digitalWrite(O3ArmPin, HIGH);
+    s7_command_scaled = 1.0;
     //Serial.println("on");
   }
   else {
-    digitalWrite(O3ArmPin, LOW);
+    s7_command_scaled = 0.5;
   }
 }
 
@@ -642,54 +649,31 @@ void controlMixer() {
   if (vesselMode == GROUND) { // GROUND MODE
     m1_command_scaled = thro_des + roll_PID + alt_PID;
     m2_command_scaled = thro_des - roll_PID + alt_PID;
-    m3_command_scaled = 0;
-    m4_command_scaled = 0;
-    m5_command_scaled = 0;
-    m6_command_scaled = 0;
     //pitch and yaw
     s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
     s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
     s3_command_scaled = 0.5;// - 2 * pitch_PID;
-    s4_command_scaled = 0;
-    s5_command_scaled = 0;
-    s6_command_scaled = 0;
-    s7_command_scaled = 0;
+
   }
 
   else if (vesselMode == DRONE) { // DRONE MODE
     //throttle and roll
     m1_command_scaled = thro_des + roll_PID;
     m2_command_scaled = thro_des - roll_PID;
-    m3_command_scaled = 0;
-    m4_command_scaled = 0;
-    m5_command_scaled = 0;
-    m6_command_scaled = 0;
     //pitch and yaw
     s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
     s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
     s3_command_scaled = 0.5 - 2 * pitch_PID;
-    s4_command_scaled = 0;
-    s5_command_scaled = 0;
-    s6_command_scaled = 0;
-    s7_command_scaled = 0;
   }
 
   else if (vesselMode == PLANE) { // PLANE MODE
     //throttle and roll
     m1_command_scaled = thro_des + roll_PID;
     m2_command_scaled = thro_des - roll_PID;
-    m3_command_scaled = 0;
-    m4_command_scaled = 0;
-    m5_command_scaled = 0;
-    m6_command_scaled = 0;
     //pitch and yaw
     s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
     s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
     s3_command_scaled = 0.5 - 2 * pitch_PID;
-    s4_command_scaled = 0;
-    s5_command_scaled = 0;
-    s6_command_scaled = 0;
-    s7_command_scaled = 0;
   }
 
   else {
