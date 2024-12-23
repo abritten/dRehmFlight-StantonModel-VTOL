@@ -360,6 +360,7 @@ const int PLANE = 3; //Change to 3 for full forward fligt. Still unstable.
 int vesselMode = GROUND;
 int faderMode = vesselMode;
 bool transition = false;
+float pitch_PID_HOLD = 0.0;
 
 
 //Flight status
@@ -664,6 +665,8 @@ void controlMixer() {
     s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
     s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
     s3_command_scaled = 0.5 - 2 * pitch_PID;
+
+    pitch_PID_HOLD = pitch_PID;
   }
 
   else if (vesselMode == PLANE) { // PLANE MODE
@@ -671,8 +674,8 @@ void controlMixer() {
     m1_command_scaled = thro_des + roll_PID;
     m2_command_scaled = thro_des - roll_PID;
     //pitch and yaw
-    s1_command_scaled = centerServo1 - pitch_PID + 0.2 * yaw_PID;
-    s2_command_scaled = centerServo2 + pitch_PID + 0.2 * yaw_PID;
+    s1_command_scaled = centerServo1 - pitch_PID_HOLD + 0.2 * yaw_PID;//- pitch_PID
+    s2_command_scaled = centerServo2 + pitch_PID_HOLD + 0.2 * yaw_PID;//+ pitch_PID
     s3_command_scaled = 0.5 - 2 * pitch_PID;
   }
 
